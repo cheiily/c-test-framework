@@ -3,7 +3,8 @@
 //
 
 #include "tests_framework.c"
-#include "../program/program.c"
+#include "../program/program.h"
+
 
 test_case_result test_sample() {
     return (test_case_result) {

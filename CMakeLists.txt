@@ -13,4 +13,6 @@ add_executable(playground_tests
         tests/tests.c
         tests/tests_framework.h
         program/program.h
+        program/program.c
 )
+target_link_libraries(playground_tests m)
