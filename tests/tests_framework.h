@@ -14,7 +14,6 @@ enum test_case_status {
     ERROR
 };
 typedef enum test_case_status test_case_status;
-string tcs_name(test_case_status status);
 
 struct test_case_result {
     test_case_status status;
