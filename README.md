@@ -12,7 +12,7 @@ If unchanged, the project name will remain `riichi`.
 The entirety of the framework is contained within `tests/riichi.h` and `tests/riichi.c`.
 Any publicly exposed API is prefixed with the `riichi_`/`RIICHI_` "namespace" to avoid identifier collisions.
 
-A sample test file is provided as usage example in the form of `tests/tests.c`. 
+A sample test file is provided to guide usage, in the form of `tests/tests.c`. 
 Anything that file contains is what should be written by the end user. 
 
 
@@ -132,7 +132,9 @@ A simple handler, whose main role is displaying an appropriate diagnostic messag
     This behavior is configured by defining `RIICHI_UNSAFE_DIAG` and `RIICHI_RESUME_ON_SIGNAL` respectively before the inclusion of `riichi.h`. \
     By default, both macros are left undefined, commented-out in the template `tests.c` file.
 
-## References that helped me implement this
+---
+
+## References that helped me implement this and may or may not help you too
 - https://en.cppreference.com/c/23
 - clock_gettime(3)
 - pthreads(7)
@@ -146,4 +148,15 @@ A simple handler, whose main role is displaying an appropriate diagnostic messag
 - https://sourceware.org/glibc/manual/latest/html_node/Sigaction-Function-Example.html
 - and many others :)
 
+---
 
+## Colophon
+Riichi in Riichi Mahjong is one of the standard Yaku (win conditions) introduced in this spin on the game. 
+Riichi is possibly the most common yaku used in the game, requires little to no effort to use and may often reward extra points.
+It is special in that it requires no specific hand structure and may be connected with most other conditions. A very versatile tool indeed.
+According to [wikipedia]([wikipedia](https://en.wikipedia.org/wiki/Yaku_(Japanese_mahjong)#List_of_yaku)), _riichi_ stands for _ready_ and is thus used to indicate a _ready hand_ (Although linguistically, it's a transformed loanword version of _reach_). \
+In this way riichi itself is very similar to unit tests. Sure, it's not a requirement to test your project, but it is basically free, requries little preemptive effort and may result in drastic improval of your code's quality.
+By including them your project becomes _ready_ to ship and potentially become something of value. It should also be a common occurence in your code.
+
+Optionally let's say RIICHI stand for Rudimentary Interleaving Implementation for C-lang Heuristic Improvement.
+Or Rustic Improvement Ideology of Cheily's Heinous Implements.
