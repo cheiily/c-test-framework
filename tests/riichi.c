@@ -3,7 +3,7 @@
 #include <signal.h>
 #include <stdlib.h>
 
-#include "tests_framework.h"
+#include "riichi.h"
 
 #include <errno.h>
 #include <math.h>
@@ -14,7 +14,7 @@
 #define ECHO(A) #A
 
 // reentrant
-string signame(const int signal) {
+riichi_string signame(const int signal) {
     switch (signal) {
         case SIGABRT: return ECHO(SIGABRT);
         case SIGALRM: return ECHO(SIGALRM);
@@ -48,7 +48,7 @@ string signame(const int signal) {
     };
 }
 
-static string padding = "....................................................................................................";
+static riichi_string padding = "....................................................................................................";
 static int line_len = 100;
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -59,7 +59,7 @@ static int line_len = 100;
 #define ANSI_BOLD          "\x1b[1m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
-string tcs_name(const test_case_status status) {
+riichi_string tcs_name(const riichi_test_case_status status) {
     switch (status) {
         case SUCCESS: return "SUCCESS";
         case FAILURE: return "FAILURE";
@@ -68,7 +68,7 @@ string tcs_name(const test_case_status status) {
     return "UNKNOWN_STATUS";
 };
 
-bool is_valid_tcs_status(test_case_status status) {
+bool is_valid_tcs_status(riichi_test_case_status status) {
     return (status == SUCCESS || status == FAILURE || status == ERROR);
 }
 
@@ -84,12 +84,12 @@ double elapsed(const struct timespec start, const struct timespec end) {
 
 
 // ---------------------------------- ERRORMSG STACK ----------------------------------
-static string * errstack;
+static riichi_string * errstack;
 static size_t errstack_i = 0;
 static size_t errstack_size;
 void errstack_init(const size_t size) {
     errstack_size = size;
-    errstack = malloc(size * sizeof(string));
+    errstack = malloc(size * sizeof(riichi_string));
 }
 void errstack_cleanup() {
     for (int i = 0; i < errstack_size; ++i) {
@@ -97,11 +97,11 @@ void errstack_cleanup() {
     }
     free(errstack);
 }
-string errstr(const size_t len) {
+riichi_string errstr(const size_t len) {
     errstack[errstack_i] = malloc(len * sizeof(char));
     return errstack[errstack_i++];
 }
-string errstack_pop() {
+riichi_string errstack_pop() {
     return errstack[errstack_i--];
 }
 // ------------------------------------------------------------------------------------
@@ -109,8 +109,8 @@ string errstack_pop() {
 
 // ---------------------------------- THREAD HELPERS ----------------------------------
 struct proxy {
-    test_case * tcase;
-    test_case_result * result;
+    riichi_test_case * tcase;
+    riichi_test_case_result * result;
     struct timespec * clock_start;
     struct timespec * clock_end;
 };
@@ -121,7 +121,7 @@ void * proxy_case(void * args) {
     clock_gettime(CLOCK_MONOTONIC_RAW, proxy->clock_start);
     const auto result = proxy->tcase->fn();
     clock_gettime(CLOCK_MONOTONIC_RAW, proxy->clock_end);
-    memcpy(proxy->result, &result, sizeof(test_case_result));
+    memcpy(proxy->result, &result, sizeof(riichi_test_case_result));
     return nullptr;
 }
 
@@ -130,7 +130,7 @@ enum RIICHI_PTHREAD_ACTION {
     CREATION,
     JOIN
 };
-string riichi_pthread_action_name(enum RIICHI_PTHREAD_ACTION action) {
+riichi_string riichi_pthread_action_name(enum RIICHI_PTHREAD_ACTION action) {
     switch (action) {
         case CREATION: return ECHO(CREATION);
         case JOIN: return ECHO(JOIN);
@@ -138,11 +138,12 @@ string riichi_pthread_action_name(enum RIICHI_PTHREAD_ACTION action) {
     return "UNKNOWN";
 }
 
-void save_pthread_error(test_case_result * result, const int code, const enum RIICHI_PTHREAD_ACTION action) {
+void save_pthread_error(riichi_test_case_result * result, const int code, const enum RIICHI_PTHREAD_ACTION action) {
     if (code != 0) {
         result->status = ERROR;
 
-        const string mode = riichi_pthread_action_name(action);
+        // TODO message may be saved to upon joining failure, zero and compare to nullptr, strcat
+        const riichi_string mode = riichi_pthread_action_name(action);
         const size_t len = strlen("Pthread  error !\n") + strlen(mode) + ilen(code) + 1;
         result->message = errstr(len);
         sprintf(result->message, "Pthread %s error %i!\n", mode, code);
@@ -152,35 +153,34 @@ void save_pthread_error(test_case_result * result, const int code, const enum RI
 
 
 // ---------------------------------- SIGNAL HANDLER ----------------------------------
-static void signal_handler(const int signal, siginfo_t * info, void *ucontext)
-{
-    const string sname = signame(signal);
+void riichi_signal_handler(const int signal, siginfo_t * info, void *ucontext) {
+    const riichi_string sname = signame(signal);
 
     write(STDOUT_FILENO, ANSI_COLOR_RED, strlen(ANSI_COLOR_RED));
     write(STDOUT_FILENO, "Caught signal ", strlen("Caught signal "));
     write(STDOUT_FILENO, sname, strlen(sname));
     write(STDOUT_FILENO, "!\n", strlen("!\n"));
 
-#ifdef TESTS_EXIT_ON_SIGNAL
+#ifndef RIICHI_RESUME_ON_SIGNAL
     write(STDOUT_FILENO, "EXITING...\n", strlen("EXITING...\n"));
     write(STDOUT_FILENO, ANSI_COLOR_RESET, strlen(ANSI_COLOR_RESET));
     exit(signal);
 #endif
 
-    const string msg = "TESTS_EXIT_ON_SIGNAL not defined. Attempting to resume program execution. Anything from now on is undefined behaviour!.\n";
+    const riichi_string msg = "RIICHI_EXIT_ON_SIGNAL not defined. Attempting to resume program execution. Anything from now on is undefined behaviour!.\n";
     write(STDOUT_FILENO, msg, strlen(msg));
     write(STDOUT_FILENO, ANSI_COLOR_RESET, strlen(ANSI_COLOR_RESET));
 
-#ifdef TESTS_UNSAFE_DIAG
+#ifdef RIICHI_UNSAFE_DIAG
     // printf is not async-signal-safe, illegal here
     // no color to not change it forever in case of crash
-    printf("Signal no %i\n", signal);
-    printf("Signal number: %u. Signal errno: %u. Signal code: %u. Sender PID: %i.\n", info->si_signo, info->si_errno, info->si_code, info->si_pid);
-    printf("Current thread id %u\n", pthread_self());
+    printf("Signal code: %i\n", signal);
+    printf("[siginfo_t] Signal number: %u. Signal errno: %u. Signal code: %u. Sender PID: %i.\n", info->si_signo, info->si_errno, info->si_code, info->si_pid);
+    printf("Current thread id: %u\n\n", pthread_self());
 #endif
 }
 
-void install_handler(int signal, const struct sigaction * handler) {
+void riichi_install_handler(int signal, const struct sigaction * handler) {
     struct sigaction old_action;
     sigaction(signal, nullptr, &old_action);
     if (old_action.sa_handler != SIG_IGN && sigaction(signal, handler, nullptr) != 0) {
@@ -191,16 +191,14 @@ void install_handler(int signal, const struct sigaction * handler) {
 
 
 
-int run_tests(test_case * cases, int num_cases) {
-    INSTALL_HANDLERS(SIGSEGV, SIGABRT, SIGINT, SIGTERM, SIGHUP)
-
+int riichi_run_tests(riichi_test_case * cases, int num_cases) {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
     errstack_init(num_cases);
 
     int num_failures = 0;
     int num_errors = 0;
-    volatile test_case_result results[num_cases];
+    volatile riichi_test_case_result results[num_cases];
     pthread_t threads[num_cases];
     volatile struct timespec clocks[num_cases * 2];
     volatile proxy_t thread_proxies[num_cases];

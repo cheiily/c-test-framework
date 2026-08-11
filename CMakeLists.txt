@@ -1,18 +1,18 @@
 cmake_minimum_required(VERSION 4.3)
-project(playground C)
+project(riichi C)
 
 set(CMAKE_C_STANDARD 23)
 
-add_executable(playground
+add_executable(riichi
         main.c
         program/program.h
         program/program.c
 )
 
-add_executable(playground_tests
+add_executable(riichi_tests
         tests/tests.c
-        tests/tests_framework.h
+        tests/riichi.h
         program/program.h
         program/program.c
 )
-target_link_libraries(playground_tests m)
+target_link_libraries(riichi_tests m)

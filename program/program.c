@@ -1,8 +1,3 @@
-//
-// Created by cheily on 7.08.2026.
-//
-
-
 #include <stdio.h>
 #include "program.h"
 
