@@ -1,6 +1,7 @@
-//
-// Created by cheily on 7.08.2026.
-//
+
+// Uncomment these when desired.
+// #define TESTS_EXIT_ON_SIGNAL
+// #define TESTS_UNSAFE_DIAG
 
 #include "tests_framework.c"
 #include "../program/program.h"
@@ -16,7 +17,6 @@ TEST_CASE("sample test case", test_sample);
 
 test_case_result test_raise() {
     raise(SIGSEGV);
-    // should return 11 from thread?
 };
 TEST_CASE("raise signal error test case", test_raise);
 
@@ -52,13 +52,12 @@ TEST_CASE("should execute a long loop to delay the execution", test_long_loop);
 
 
 int main(void) {
-    // pthread_sigmask(SIG_BLOCK, )
     RUN_TESTS(
         test_sample_case,
         test_program_returns_0_case,
         test_sleep_case,
         test_long_loop_case,
-        // test_raise_case
+        test_raise_case
     )
 
     return test_exit_code;

@@ -29,17 +29,29 @@ struct test_case {
 };
 typedef struct test_case test_case;
 
-#define TEST_CASE(_name, _fn) \
-    static test_case _fn##_case = { \
-        .name = _name, \
-        .fn = _fn \
+#define TEST_CASE(_name, _fn)               \
+    static test_case _fn##_case = {         \
+        .name = _name,                      \
+        .fn = _fn                           \
     }
 
 int run_tests(test_case * cases, int num_cases);
-#define RUN_TESTS(...) \
-    test_case __test_cases[] = {__VA_ARGS__}; \
-    int __num_cases = sizeof(__test_cases) / sizeof(__test_cases[0]); \
+#define RUN_TESTS(...)                                                  \
+    test_case __test_cases[] = {__VA_ARGS__};                           \
+    int __num_cases = sizeof(__test_cases) / sizeof(__test_cases[0]);   \
     int test_exit_code = run_tests(__test_cases, __num_cases);
 
+void install_handler(int signal, const struct sigaction * handler);
+#define INSTALL_HANDLERS(...)                                           \
+    int __signals[] = {__VA_ARGS__};                                    \
+    int __num_signals = sizeof(__signals) / sizeof(__signals[0]);       \
+    struct sigaction handler;                                           \
+    handler.sa_sigaction = signal_handler;                              \
+    sigemptyset(&handler.sa_mask);                                      \
+    sigaddset(&handler.sa_mask, SA_SIGINFO);                            \
+    handler.sa_flags = 0;                                               \
+    for (int i = 0; i < __num_signals; ++i) {                           \
+        install_handler(__signals[i], &handler);                        \
+    }
 
 #endif //PLAYGROUND_TESTS_FRAMEWORK_H
