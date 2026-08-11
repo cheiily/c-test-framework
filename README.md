@@ -25,14 +25,14 @@ The function takes no arguments and should return a locally-constructed`riichi_t
 ### `riichi_test_case_result`
 The case result to be returned by any test case. 
 Defined as:
-```
+```c
 struct riichi_test_case_result {
     riichi_test_case_status status;
     riichi_string message;
 };
 ```
 The case should always set a value to `status`. \
-The message (`riichi_string` is a convenience typedef to `const char *`) is only expected in case the status is not a `SUCCESS`.
+The message (`riichi_string` is a convenience typedef to `const char *`) is only expected in case the status is not a `SUCCESS`. It is OK to assign message as `nullptr` if unused.
 The message should be a string literal. Optionally the user may allocate a string on the heap, store a pointer and free it manually, after the tests have concluded.
 There is currently no support for dynamically allocated messages out-of-the-box.
 

@@ -1,6 +1,6 @@
 
 // Uncomment these to change signal handling behavior.
-// #define RIICHI_RESUME_ON_SIGNAL
+#define RIICHI_RESUME_ON_SIGNAL
 // #define RIICHI_UNSAFE_DIAG
 
 #include "riichi.c"
@@ -49,6 +49,22 @@ static riichi_test_case_result test_long_loop() {
 }
 RIICHI_TEST_CASE("should execute a long loop to delay the execution", test_long_loop);
 
+static riichi_test_case_result test_writes_and_error() {
+    return (riichi_test_case_result) {
+        .status = ERROR,
+        .message = "Third party error simulation"
+    };
+}
+RIICHI_TEST_CASE("should return error with a message", test_writes_and_error);
+
+static riichi_test_case_result test_writes_and_failure() {
+    return (riichi_test_case_result) {
+        .status = FAILURE,
+        .message = "Test failure simulation"
+    };
+}
+RIICHI_TEST_CASE("should return failure with a message", test_writes_and_failure);
+
 
 int main(void) {
     RIICHI_INSTALL_HANDLERS(SIGSEGV, SIGABRT, SIGINT, SIGTERM, SIGHUP)
@@ -57,7 +73,9 @@ int main(void) {
         test_program_returns_0_case,
         test_sleep_case,
         test_long_loop_case,
-        test_raise_case
+        test_raise_case,
+        test_writes_and_error_case,
+        test_writes_and_failure_case
     )
 
     return riichi_test_exit_code;

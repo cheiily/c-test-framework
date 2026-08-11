@@ -142,11 +142,22 @@ void save_pthread_error(riichi_test_case_result * result, const int code, const 
     if (code != 0) {
         result->status = ERROR;
 
-        // TODO message may be saved to upon joining failure, zero and compare to nullptr, strcat
+        const bool written = result->message != nullptr;
+
         const riichi_string mode = riichi_pthread_action_name(action);
-        const size_t len = strlen("Pthread  error !\n") + strlen(mode) + ilen(code) + 1;
+        const size_t len = strlen("Pthread  error !\n") + strlen(mode) + ilen(code) + 1
+            + written ? strlen(result->message) : 0;
+
+        riichi_string old_msg;
+        if (written) {
+            strcpy(old_msg, result->message);
+        }
+
         result->message = errstr(len);
         sprintf(result->message, "Pthread %s error %i!\n", mode, code);
+        if (written) {
+            strcat(result->message, old_msg);
+        }
     }
 }
 // ------------------------------------------------------------------------------------
@@ -167,7 +178,7 @@ void riichi_signal_handler(const int signal, siginfo_t * info, void *ucontext) {
     exit(signal);
 #endif
 
-    const riichi_string msg = "RIICHI_EXIT_ON_SIGNAL not defined. Attempting to resume program execution. Anything from now on is undefined behaviour!.\n";
+    const riichi_string msg = "RIICHI_RESUME_ON_SIGNAL not defined. Attempting to resume program execution. Anything from now on is undefined behaviour!.\n";
     write(STDOUT_FILENO, msg, strlen(msg));
     write(STDOUT_FILENO, ANSI_COLOR_RESET, strlen(ANSI_COLOR_RESET));
 
@@ -204,7 +215,7 @@ int riichi_run_tests(riichi_test_case * cases, int num_cases) {
     volatile proxy_t thread_proxies[num_cases];
 
     for (int i = 0; i < num_cases; ++i) {
-        results[i].message = "";
+        results[i].message = nullptr;
     }
 
     printf("\n");
@@ -241,7 +252,7 @@ int riichi_run_tests(riichi_test_case * cases, int num_cases) {
         const auto slen = strlen(status) + strlen(cases[i].name) + ilen(i) + 14;
 
         printf("[%i] (%s) %*.*s %.3fs %s%s%s\n", i, cases[i].name, 3, line_len - slen, padding, elapsed(clocks[2 * i], clocks[2 * i + 1]), clr, status, ANSI_COLOR_RESET);
-        if (result->status != SUCCESS)
+        if (result->status != SUCCESS && result->message != nullptr)
             printf("%s[%i] \t%s\n%s", ANSI_COLOR_RED, i, result->message, ANSI_COLOR_RESET);
         printf("\n");
     }
