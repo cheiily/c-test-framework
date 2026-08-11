@@ -32,14 +32,15 @@ struct riichi_test_case_result {
 };
 ```
 The case should always set a value to `status`. \
-The message (`riichi_string` is a convenience typedef to `const char *`) in only expected in case the status is not a `SUCCESS`.
+The message (`riichi_string` is a convenience typedef to `const char *`) is only expected in case the status is not a `SUCCESS`.
 The message should be a string literal. Optionally the user may allocate a string on the heap, store a pointer and free it manually, after the tests have concluded.
 There is currently no support for dynamically allocated messages out-of-the-box.
 
 ### `riichi_test_case_status` (enum)
 One of`SUCCESS`,`FAILURE`,`ERROR`.
 Self-descriptive. Use `FAILURE` for expected test-case failures. 
-Use `ERROR`, if possible, for unexpected errors such as I/O, third-party failures.
+Use `ERROR`, if possible, for unexpected errors such as I/O or third-party failures.
+`ERROR` will also be assigned if the thread creation or joining fails.
 
 ### `riichi_test_case`
 - Should be created via the `RIICHI_TEST_CASE` macro.
@@ -86,7 +87,7 @@ Requires that the cases be declared as instances of `riichi_test_case`, either v
 Installs a `riichi_signal_handler` via `sigaction` for the given signal. 
 
 ### `RIICHI_INSTALL_HANDLERS` (macro)
-Var-arg macro to install a signal handler for any of the signals below. \
+Var-arg macro to install a `riichi_signal_handler` for any of the signals below. \
 The macro packs the arguments and creates a common handler for all the declared signals.
 
 The allowed signals are: \
@@ -128,9 +129,10 @@ A simple handler, whose main role is displaying an appropriate diagnostic messag
 - The optional unsafe part which uses `printf` to display just a little more potentially-useful information and then attempts to resume the program.
     This extra info includes any data received within `siginfo_t` and the current thread id as obtained by `pthread_self`.
     The thread id may be useful in conjunction with the respective test-launch log line to corellate the appropriate failing test number. 
-    Note however, that this will usually not be the case, as such behavior may be expected only if the test itself fired `raise`. \
-    This behavior is configured by defining `RIICHI_UNSAFE_DIAG` and `RIICHI_RESUME_ON_SIGNAL` respectively before the inclusion of `riichi.h`. \
-    By default, both macros are left undefined, commented-out in the template `tests.c` file.
+    Note however, that this will usually not be the case, as such behavior may be expected only if the test itself fired `raise`.
+    
+Behavior of this handler is configured by defining `RIICHI_UNSAFE_DIAG` and `RIICHI_RESUME_ON_SIGNAL` respectively, before the inclusion of `riichi.h`. \
+By default, both macros are left undefined, commented-out in the template `tests.c` file.
 
 ---
 
